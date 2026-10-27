@@ -1,0 +1,848 @@
+```html
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Re-Vibe Studio - Customización & Upcycling de Ropa Usada</title>
+
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <!-- Fabric.js para manipulaciones interactivas robustas del Canvas -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/5.3.1/fabric.min.js"></script>
+
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@700&family=Montserrat:wght@400;600;700;800;900&family=Permanent+Marker&family=Space+Grotesk:wght@500;700;900&display=swap" rel="stylesheet">
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            green: '#1E3E2B',
+                            accent: '#A3E635',
+                            denim: '#2563EB',
+                            dark: '#0F172A',
+                            sand: '#F8F6F0',
+                            card: '#FFFFFF',
+                            rust: '#E11D48'
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Montserrat', 'sans-serif'],
+                        graffiti: ['Permanent Marker', 'cursive'],
+                        script: ['Caveat', 'cursive'],
+                        mono: ['Space Grotesk', 'sans-serif']
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: #E2E8F0;
+            border-radius: 8px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #A3E635;
+            border-radius: 8px;
+        }
+        /* Ajuste de controles de Fabric.js */
+        .canvas-container {
+            margin: 0 auto !important;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.08);
+            border-radius: 1rem;
+            overflow: hidden;
+            background: #ffffff;
+        }
+    </style>
+</head>
+<body class="bg-brand-sand text-slate-800 font-sans min-h-screen flex flex-col">
+
+    <!-- Header / Navbar -->
+    <header class="bg-white/95 backdrop-blur-md sticky top-0 z-40 border-b border-stone-200">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <div class="bg-brand-dark text-brand-accent p-2.5 rounded-xl shadow-md border border-brand-accent/30 flex items-center justify-center">
+                    <i class="fa-solid fa-arrows-rotate text-xl animate-spin-slow"></i>
+                </div>
+                <div>
+                    <div class="flex items-center gap-1.5">
+                        <h1 class="font-extrabold text-lg sm:text-2xl tracking-tighter text-brand-dark font-mono leading-none">
+                            RE-VIBE<span class="text-brand-accent">.</span>
+                        </h1>
+                        <span class="bg-brand-accent/20 text-brand-green text-[10px] font-black px-1.5 py-0.5 rounded uppercase tracking-wider">Studio</span>
+                    </div>
+                    <p class="text-[11px] text-stone-500 font-medium">Reutiliza. Rediseña. Dale otra vibra a tu ropa.</p>
+                </div>
+            </div>
+
+            <div class="flex items-center gap-2 sm:gap-4">
+                <!-- Selector de Moneda -->
+                <div class="flex items-center bg-stone-100 rounded-xl px-2 py-1 text-xs font-bold text-stone-700 border border-stone-200">
+                    <i class="fa-solid fa-coins text-brand-green mr-1.5"></i>
+                    <select id="currency-select" onchange="changeCurrency()" class="bg-transparent focus:outline-none cursor-pointer">
+                        <option value="COP">COP ($)</option>
+                        <option value="USD">USD ($)</option>
+                        <option value="MXN">MXN ($)</option>
+                        <option value="EUR">EUR (€)</option>
+                    </select>
+                </div>
+
+                <!-- Botón Cotización / Carrito -->
+                <button onclick="toggleModal('summary-modal')" class="flex items-center gap-2 bg-brand-dark hover:bg-black text-white px-3.5 py-2 rounded-xl text-xs sm:text-sm font-bold shadow-md transition border border-stone-800">
+                    <i class="fa-solid fa-bag-shopping text-brand-accent"></i>
+                    <span class="hidden sm:inline">Mi Re-Vibe</span>
+                    <span id="cart-badge" class="bg-brand-accent text-brand-dark px-1.5 py-0.5 rounded-full text-xs font-black">0</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content Layout -->
+    <main class="flex-1 max-w-7xl w-full mx-auto p-3 sm:p-6 grid grid-cols-1 lg:grid-cols-12 gap-6">
+
+        <!-- PANEL IZQUIERDO: Selector de Prenda y Herramientas (5 Col) -->
+        <aside class="lg:col-span-5 flex flex-col gap-4">
+            
+            <!-- STEP 1: Prenda Base y Color -->
+            <div class="bg-white p-4 rounded-2xl shadow-sm border border-stone-200">
+                <h2 class="text-xs uppercase tracking-wider font-extrabold text-brand-dark mb-3 flex items-center justify-between">
+                    <span class="flex items-center gap-2">
+                        <span class="w-5 h-5 rounded-full bg-brand-dark text-brand-accent flex items-center justify-center text-[10px] font-mono font-bold">1</span>
+                        Selecciona tu prenda base
+                    </span>
+                    <span class="text-[11px] font-normal text-stone-400">Piesas Re-Vibe Usadas</span>
+                </h2>
+
+                <!-- Grid de Prendas Base -->
+                <div class="grid grid-cols-2 gap-2" id="garment-selector">
+                    <button onclick="selectGarment('jacket')" id="btn-garment-jacket" class="garment-btn border-2 border-brand-dark bg-stone-50 p-2.5 rounded-xl flex items-center gap-3 transition text-left">
+                        <div class="w-10 h-10 rounded-lg bg-stone-200 flex items-center justify-center text-brand-dark font-bold text-lg"><i class="fa-solid fa-vest"></i></div>
+                        <div>
+                            <p class="font-bold text-xs text-stone-800">Chaqueta Denim</p>
+                            <p class="text-[11px] text-stone-500 font-semibold" id="price-tag-jacket">$25 USD</p>
+                        </div>
+                    </button>
+
+                    <button onclick="selectGarment('tshirt')" id="btn-garment-tshirt" class="garment-btn border-2 border-stone-200 p-2.5 rounded-xl flex items-center gap-3 transition text-left">
+                        <div class="w-10 h-10 rounded-lg bg-stone-100 flex items-center justify-center text-stone-600 text-lg"><i class="fa-solid fa-shirt"></i></div>
+                        <div>
+                            <p class="font-bold text-xs text-stone-800">Camiseta Algodón</p>
+                            <p class="text-[11px] text-stone-500 font-semibold" id="price-tag-tshirt">$12 USD</p>
+                        </div>
+                    </button>
+
+                    <button onclick="selectGarment('pants')" id="btn-garment-pants" class="garment-btn border-2 border-stone-200 p-2.5 rounded-xl flex items-center gap-3 transition text-left">
+                        <div class="w-10 h-10 rounded-lg bg-stone-100 flex items-center justify-center text-stone-600 text-lg"><i class="fa-solid fa-socks"></i></div>
+                        <div>
+                            <p class="font-bold text-xs text-stone-800">Jeans / Pantalón</p>
+                            <p class="text-[11px] text-stone-500 font-semibold" id="price-tag-pants">$22 USD</p>
+                        </div>
+                    </button>
+
+                    <button onclick="selectGarment('hoodie')" id="btn-garment-hoodie" class="garment-btn border-2 border-stone-200 p-2.5 rounded-xl flex items-center gap-3 transition text-left">
+                        <div class="w-10 h-10 rounded-lg bg-stone-100 flex items-center justify-center text-stone-600 text-lg"><i class="fa-solid fa-user-ninja"></i></div>
+                        <div>
+                            <p class="font-bold text-xs text-stone-800">Hoodie Sudadera</p>
+                            <p class="text-[11px] text-stone-500 font-semibold" id="price-tag-hoodie">$28 USD</p>
+                        </div>
+                    </button>
+                </div>
+
+                <!-- Selector de Color de Prenda -->
+                <div class="mt-3 pt-3 border-t border-stone-100 flex items-center justify-between">
+                    <span class="text-xs font-semibold text-stone-600">Color Base:</span>
+                    <div class="flex items-center gap-1.5" id="color-palette">
+                        <button onclick="changeGarmentColor('#3B5998')" class="w-6 h-6 rounded-full bg-[#3B5998] border-2 border-white shadow hover:scale-110 transition" title="Denim Clásico"></button>
+                        <button onclick="changeGarmentColor('#0F172A')" class="w-6 h-6 rounded-full bg-[#0F172A] border-2 border-white shadow hover:scale-110 transition" title="Negro Re-Vibe"></button>
+                        <button onclick="changeGarmentColor('#F4F1EA')" class="w-6 h-6 rounded-full bg-[#F4F1EA] border border-stone-300 shadow hover:scale-110 transition" title="Crudo Vintage"></button>
+                        <button onclick="changeGarmentColor('#1E3E2B')" class="w-6 h-6 rounded-full bg-[#1E3E2B] border-2 border-white shadow hover:scale-110 transition" title="Verde Botella"></button>
+                        <button onclick="changeGarmentColor('#E11D48')" class="w-6 h-6 rounded-full bg-[#E11D48] border-2 border-white shadow hover:scale-110 transition" title="Rojo Vibe"></button>
+                        <input type="color" id="custom-garment-color" onchange="changeGarmentColor(this.value)" class="w-6 h-6 rounded-full cursor-pointer p-0 border-0 bg-transparent" title="Color Personalizado">
+                    </div>
+                </div>
+            </div>
+
+            <!-- STEP 2: Herramientas de Personalización -->
+            <div class="bg-white p-4 rounded-2xl shadow-sm border border-stone-200 flex-1 flex flex-col">
+                <h2 class="text-xs uppercase tracking-wider font-extrabold text-brand-dark mb-3 flex items-center gap-2">
+                    <span class="w-5 h-5 rounded-full bg-brand-dark text-brand-accent flex items-center justify-center text-[10px] font-mono font-bold">2</span>
+                    Personaliza & Re-Vibra
+                </h2>
+
+                <!-- Pestana de Modos -->
+                <div class="flex border-b border-stone-200 mb-3 text-xs overflow-x-auto custom-scrollbar gap-1 pb-1">
+                    <button onclick="switchTab('stickers')" id="tab-btn-stickers" class="tab-btn active font-bold py-1.5 px-2.5 border-b-2 border-brand-dark text-brand-dark whitespace-nowrap">
+                        <i class="fa-solid fa-icons mr-1"></i> Parches
+                    </button>
+                    <button onclick="switchTab('upload')" id="tab-btn-upload" class="tab-btn font-bold py-1.5 px-2.5 text-stone-500 hover:text-stone-800 whitespace-nowrap">
+                        <i class="fa-solid fa-upload mr-1"></i> Subir Arte
+                    </button>
+                    <button onclick="switchTab('text')" id="tab-btn-text" class="tab-btn font-bold py-1.5 px-2.5 text-stone-500 hover:text-stone-800 whitespace-nowrap">
+                        <i class="fa-solid fa-font mr-1"></i> Texto / Bordado
+                    </button>
+                    <button onclick="switchTab('distress')" id="tab-btn-distress" class="tab-btn font-bold py-1.5 px-2.5 text-stone-500 hover:text-stone-800 whitespace-nowrap">
+                        <i class="fa-solid fa-scissors mr-1"></i> Desgaste / Herrajes
+                    </button>
+                </div>
+
+                <!-- CONTENIDO PESTAÑA 1: Parches Predeterminados -->
+                <div id="tab-stickers" class="tab-content flex-1">
+                    <p class="text-[11px] text-stone-500 mb-2">Añade parches exclusivos Re-Vibe (+$3 USD c/u):</p>
+                    <div class="grid grid-cols-4 gap-2 max-h-52 overflow-y-auto custom-scrollbar p-1">
+                        <button onclick="addPresetSticker('🌱', 'Re-Vibe Green')" class="p-2 border border-stone-200 rounded-xl hover:bg-lime-50 hover:border-brand-accent transition flex flex-col items-center">
+                            <span class="text-2xl">🌱</span>
+                            <span class="text-[9px] font-semibold text-stone-600 mt-1">Green Brote</span>
+                        </button>
+                        <button onclick="addPresetSticker('♻️', 'Recycle Vibe')" class="p-2 border border-stone-200 rounded-xl hover:bg-lime-50 hover:border-brand-accent transition flex flex-col items-center">
+                            <span class="text-2xl">♻️</span>
+                            <span class="text-[9px] font-semibold text-stone-600 mt-1">Reciclaje</span>
+                        </button>
+                        <button onclick="addPresetSticker('⚡', 'Rayo Re-Vibe')" class="p-2 border border-stone-200 rounded-xl hover:bg-lime-50 hover:border-brand-accent transition flex flex-col items-center">
+                            <span class="text-2xl">⚡</span>
+                            <span class="text-[9px] font-semibold text-stone-600 mt-1">Voltio</span>
+                        </button>
+                        <button onclick="addPresetSticker('🔥', 'Fire Upcycling')" class="p-2 border border-stone-200 rounded-xl hover:bg-lime-50 hover:border-brand-accent transition flex flex-col items-center">
+                            <span class="text-2xl">🔥</span>
+                            <span class="text-[9px] font-semibold text-stone-600 mt-1">Fuego</span>
+                        </button>
+                        <button onclick="addPresetSticker('💀', 'Skull Re-Vibe')" class="p-2 border border-stone-200 rounded-xl hover:bg-lime-50 hover:border-brand-accent transition flex flex-col items-center">
+                            <span class="text-2xl">💀</span>
+                            <span class="text-[9px] font-semibold text-stone-600 mt-1">Calavera</span>
+                        </button>
+                        <button onclick="addPresetSticker('🌸', 'Flower Power')" class="p-2 border border-stone-200 rounded-xl hover:bg-lime-50 hover:border-brand-accent transition flex flex-col items-center">
+                            <span class="text-2xl">🌸</span>
+                            <span class="text-[9px] font-semibold text-stone-600 mt-1">Flor</span>
+                        </button>
+                        <button onclick="addPresetSticker('🛸', 'UFO Re-Vibe')" class="p-2 border border-stone-200 rounded-xl hover:bg-lime-50 hover:border-brand-accent transition flex flex-col items-center">
+                            <span class="text-2xl">🛸</span>
+                            <span class="text-[9px] font-semibold text-stone-600 mt-1">Alien</span>
+                        </button>
+                        <button onclick="addPresetSticker('☮️', 'Peace Vibe')" class="p-2 border border-stone-200 rounded-xl hover:bg-lime-50 hover:border-brand-accent transition flex flex-col items-center">
+                            <span class="text-2xl">☮️</span>
+                            <span class="text-[9px] font-semibold text-stone-600 mt-1">Paz</span>
+                        </button>
+                        <button onclick="addPresetSticker('🇨🇴', 'Vibe Colombia')" class="p-2 border border-stone-200 rounded-xl hover:bg-lime-50 hover:border-brand-accent transition flex flex-col items-center">
+                            <span class="text-2xl">🇨🇴</span>
+                            <span class="text-[9px] font-semibold text-stone-600 mt-1">Bandera</span>
+                        </button>
+                        <button onclick="addPresetSticker('🦋', 'Butterfly Vibe')" class="p-2 border border-stone-200 rounded-xl hover:bg-lime-50 hover:border-brand-accent transition flex flex-col items-center">
+                            <span class="text-2xl">🦋</span>
+                            <span class="text-[9px] font-semibold text-stone-600 mt-1">Mariposa</span>
+                        </button>
+                        <button onclick="addPresetSticker('🍄', 'Mushroom Street')" class="p-2 border border-stone-200 rounded-xl hover:bg-lime-50 hover:border-brand-accent transition flex flex-col items-center">
+                            <span class="text-2xl">🍄</span>
+                            <span class="text-[9px] font-semibold text-stone-600 mt-1">Hongo</span>
+                        </button>
+                        <button onclick="addPresetSticker('⭐', 'Star Upcycle')" class="p-2 border border-stone-200 rounded-xl hover:bg-lime-50 hover:border-brand-accent transition flex flex-col items-center">
+                            <span class="text-2xl">⭐</span>
+                            <span class="text-[9px] font-semibold text-stone-600 mt-1">Estrella</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- CONTENIDO PESTAÑA 2: Cargar Imagen Propia -->
+                <div id="tab-upload" class="tab-content hidden flex-1 flex-col justify-center">
+                    <div class="border-2 border-dashed border-stone-300 rounded-xl p-4 text-center hover:border-brand-dark transition bg-stone-50">
+                        <i class="fa-solid fa-cloud-arrow-up text-3xl text-brand-dark mb-2"></i>
+                        <p class="text-xs font-bold text-stone-700">Subir diseño o logo propio a Re-Vibe</p>
+                        <p class="text-[10px] text-stone-400 mb-3">Soporta PNG, JPG o SVG (Máx 5MB)</p>
+                        <label class="bg-brand-dark text-white text-xs font-bold px-3.5 py-2 rounded-xl cursor-pointer hover:bg-black transition shadow">
+                            Explorar Archivos
+                            <input type="file" id="image-upload-input" accept="image/*" class="hidden" onchange="handleImageUpload(event)">
+                        </label>
+                    </div>
+                    <p class="text-[10px] text-stone-400 text-center mt-2">Costo por parche personalizado: +$3 USD</p>
+                </div>
+
+                <!-- CONTENIDO PESTAÑA 3: Texto Personalizado -->
+                <div id="tab-text" class="tab-content hidden flex-1 flex-col gap-2.5">
+                    <div>
+                        <label class="block text-[11px] font-semibold text-stone-600 mb-1">Texto o Frase Re-Vibe:</label>
+                        <input type="text" id="custom-text-input" placeholder="Ej: RE-VIBE YOUR STYLE" class="w-full px-3 py-1.5 border border-stone-300 rounded-xl text-xs focus:ring-1 focus:ring-brand-dark outline-none">
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-2">
+                        <div>
+                            <label class="block text-[11px] font-semibold text-stone-600 mb-1">Tipografía:</label>
+                            <select id="text-font-family" class="w-full px-2 py-1.5 border border-stone-300 rounded-xl text-xs bg-white">
+                                <option value="Permanent Marker">Graffiti Urbano</option>
+                                <option value="Space Grotesk">Tech Re-Vibe</option>
+                                <option value="Caveat">Bordado Cursiva</option>
+                                <option value="Montserrat">Sans-Serif Limpio</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-[11px] font-semibold text-stone-600 mb-1">Color Hilo/Pintura:</label>
+                            <input type="color" id="text-color-picker" value="#A3E635" class="w-full h-8 p-0.5 border border-stone-300 rounded-xl cursor-pointer">
+                        </div>
+                    </div>
+
+                    <button onclick="addCustomText()" class="w-full bg-brand-dark text-white font-bold py-2 rounded-xl text-xs hover:bg-black transition shadow mt-1">
+                        + Añadir Texto Re-Vibe (+$4 USD)
+                    </button>
+                </div>
+
+                <!-- CONTENIDO PESTAÑA 4: Desgaste y Remaches -->
+                <div id="tab-distress" class="tab-content hidden flex-1">
+                    <p class="text-[11px] text-stone-500 mb-2">Efectos especiales de desgaste y herrajes (+$2 USD c/u):</p>
+                    <div class="grid grid-cols-2 gap-2">
+                        <button onclick="addDistressEffect('rip')" class="p-2.5 border border-stone-200 rounded-xl hover:border-brand-accent flex items-center gap-2 text-left">
+                            <span class="text-xl">✂️</span>
+                            <div>
+                                <p class="text-xs font-bold text-stone-800">Corte/Rotura</p>
+                                <p class="text-[10px] text-stone-500">Ripped Urban</p>
+                            </div>
+                        </button>
+
+                        <button onclick="addDistressEffect('stud')" class="p-2.5 border border-stone-200 rounded-xl hover:border-brand-accent flex items-center gap-2 text-left">
+                            <span class="text-xl">🔘</span>
+                            <div>
+                                <p class="text-xs font-bold text-stone-800">Tachuela Metal</p>
+                                <p class="text-[10px] text-stone-500">Remache Pirámide</p>
+                            </div>
+                        </button>
+
+                        <button onclick="addDistressEffect('pin')" class="p-2.5 border border-stone-200 rounded-xl hover:border-brand-accent flex items-center gap-2 text-left">
+                            <span class="text-xl">🧷</span>
+                            <div>
+                                <p class="text-xs font-bold text-stone-800">Gancho / Pin</p>
+                                <p class="text-[10px] text-stone-500">Imperdible Punk</p>
+                            </div>
+                        </button>
+
+                        <button onclick="addDistressEffect('patch_hole')" class="p-2.5 border border-stone-200 rounded-xl hover:border-brand-accent flex items-center gap-2 text-left">
+                            <span class="text-xl">🕳️</span>
+                            <div>
+                                <p class="text-xs font-bold text-stone-800">Desgaste Circular</p>
+                                <p class="text-[10px] text-stone-500">Parche de Tela</p>
+                            </div>
+                        </button>
+                    </div>
+                </div>
+
+            </div>
+
+        </aside>
+
+        <!-- PANEL DERECHO: Canvas Interactivo y Controladores (7 Col) -->
+        <section class="lg:col-span-7 flex flex-col gap-4">
+            
+            <!-- Lienzo Interactivo -->
+            <div class="bg-white p-4 rounded-2xl shadow-sm border border-stone-200 flex flex-col items-center relative">
+                
+                <div class="w-full flex justify-between items-center mb-3">
+                    <span class="text-xs font-bold text-stone-700 flex items-center gap-1.5 font-mono uppercase tracking-wider">
+                        <i class="fa-solid fa-wand-magic-sparkles text-brand-dark"></i>
+                        Estudio de Diseño Re-Vibe
+                    </span>
+                    <span class="text-[11px] text-stone-400">Arrastra, escala y rota los elementos</span>
+                </div>
+
+                <!-- Contenedor del Canvas de Fabric.js -->
+                <div class="relative rounded-xl overflow-hidden border border-stone-200 shadow-inner bg-stone-50">
+                    <canvas id="garment-canvas" width="460" height="460"></canvas>
+                </div>
+
+                <!-- Barra de Herramientas del Objeto Seleccionado -->
+                <div class="w-full mt-3 pt-3 border-t border-stone-100 flex flex-wrap items-center justify-between gap-2">
+                    <span class="text-[11px] font-bold text-stone-500">Controles de Selección:</span>
+                    
+                    <div class="flex items-center gap-1.5 flex-wrap">
+                        <button onclick="centerObject('horizontal')" title="Centrar Horizontalmente" class="px-2.5 py-1 bg-stone-100 hover:bg-stone-200 rounded-lg text-xs text-stone-700 font-semibold">
+                            <i class="fa-solid fa-arrows-left-right"></i>
+                        </button>
+                        <button onclick="duplicateSelected()" title="Duplicar Objeto" class="px-2.5 py-1 bg-stone-100 hover:bg-stone-200 rounded-lg text-xs text-stone-700 font-semibold">
+                            <i class="fa-solid fa-copy"></i>
+                        </button>
+                        <button onclick="bringToFront()" title="Traer al frente" class="px-2.5 py-1 bg-stone-100 hover:bg-stone-200 rounded-lg text-xs text-stone-700 font-semibold">
+                            <i class="fa-solid fa-layer-group"></i>
+                        </button>
+                        <button onclick="sendToBack()" title="Enviar al fondo" class="px-2.5 py-1 bg-stone-100 hover:bg-stone-200 rounded-lg text-xs text-stone-700 font-semibold">
+                            <i class="fa-solid fa-down-left-and-up-right-to-center"></i>
+                        </button>
+                        <button onclick="deleteSelected()" title="Eliminar seleccionado" class="px-2.5 py-1 bg-red-50 text-red-600 hover:bg-red-100 rounded-lg text-xs font-bold">
+                            <i class="fa-solid fa-trash mr-1"></i> Borrar
+                        </button>
+                        <button onclick="clearCanvas()" title="Reiniciar todo" class="px-2.5 py-1 border border-stone-200 hover:border-red-300 rounded-lg text-xs text-stone-500 hover:text-red-600 transition">
+                            <i class="fa-solid fa-rotate-left mr-1"></i> Reiniciar
+                        </button>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- Calculadora de Sostenibilidad y Presupuesto -->
+            <div class="bg-brand-dark text-white p-5 rounded-2xl shadow-xl flex flex-col sm:flex-row items-center justify-between gap-4 border border-stone-800">
+                
+                <!-- Métricas Verdes -->
+                <div class="space-y-1 text-center sm:text-left">
+                    <div class="flex items-center justify-center sm:justify-start gap-2">
+                        <i class="fa-solid fa-leaf text-brand-accent"></i>
+                        <h3 class="font-extrabold text-xs uppercase tracking-widest text-stone-300 font-mono">Impacto Re-Vibe Sostenible</h3>
+                    </div>
+                    <div class="flex items-center gap-4 text-xs text-stone-300 mt-2">
+                        <div>
+                            <p class="text-[10px] uppercase tracking-wider text-stone-400">Agua Ahorrada</p>
+                            <p class="text-base font-mono font-bold text-brand-accent" id="metric-water">2,700 L</p>
+                        </div>
+                        <div class="border-l border-stone-700 h-7"></div>
+                        <div>
+                            <p class="text-[10px] uppercase tracking-wider text-stone-400">CO₂ Evitado</p>
+                            <p class="text-base font-mono font-bold text-brand-accent" id="metric-co2">9.5 kg</p>
+                        </div>
+                        <div class="border-l border-stone-700 h-7"></div>
+                        <div>
+                            <p class="text-[10px] uppercase tracking-wider text-stone-400">Textil Reutilizado</p>
+                            <p class="text-base font-mono font-bold text-brand-accent" id="metric-waste">450 g</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Total Estimado -->
+                <div class="bg-stone-900/80 px-5 py-3 rounded-xl border border-stone-800 text-center w-full sm:w-auto">
+                    <p class="text-[10px] text-stone-400 uppercase tracking-widest font-mono font-bold">Total Re-Vibe</p>
+                    <p class="text-2xl font-mono font-extrabold text-brand-accent" id="total-price-display">$25.00 USD</p>
+                </div>
+
+            </div>
+
+        </section>
+
+    </main>
+
+    <!-- MODAL DE COTIZACIÓN Y PEDIDO -->
+    <div id="summary-modal" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl flex flex-col max-h-[90vh]">
+            
+            <div class="flex justify-between items-center border-b border-stone-200 pb-3">
+                <div class="flex items-center gap-2">
+                    <span class="bg-brand-dark text-brand-accent px-2 py-0.5 rounded font-mono font-black text-xs">RE-VIBE</span>
+                    <h3 class="font-extrabold text-base text-brand-dark">Resumen de Cotización</h3>
+                </div>
+                <button onclick="toggleModal('summary-modal')" class="text-stone-400 hover:text-stone-600 text-lg">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+
+            <div class="my-4 overflow-y-auto custom-scrollbar flex-1 pr-1 space-y-4">
+                
+                <!-- Desglose de Costos -->
+                <div>
+                    <p class="text-xs font-bold text-stone-500 uppercase tracking-wider mb-2">Desglose del Rediseño:</p>
+                    <div id="modal-items-breakdown" class="space-y-1.5 text-xs bg-stone-50 p-3 rounded-xl border border-stone-200 font-mono">
+                        <!-- Generado por JS -->
+                    </div>
+                </div>
+
+                <!-- Datos de Contacto -->
+                <div class="space-y-2">
+                    <p class="text-xs font-bold text-stone-700">Datos para procesar tu prenda Re-Vibe:</p>
+                    <input type="text" id="client-name" placeholder="Nombre completo" class="w-full text-xs px-3 py-2 border rounded-xl outline-none focus:border-brand-dark">
+                    <input type="tel" id="client-phone" placeholder="Número de WhatsApp (ej: +573001234567)" class="w-full text-xs px-3 py-2 border rounded-xl outline-none focus:border-brand-dark">
+                    <textarea id="client-notes" rows="2" placeholder="Notas sobre la prenda (talla, detalles especiales de costura...)" class="w-full text-xs px-3 py-2 border rounded-xl outline-none focus:border-brand-dark"></textarea>
+                </div>
+
+            </div>
+
+            <!-- Acciones del Modal -->
+            <div class="flex flex-wrap gap-2 pt-3 border-t border-stone-200">
+                <button onclick="downloadDesignPNG()" class="flex-1 bg-stone-100 hover:bg-stone-200 text-stone-800 font-bold py-2.5 rounded-xl text-xs transition flex items-center justify-center gap-1">
+                    <i class="fa-solid fa-download"></i> Descargar PNG
+                </button>
+                <button onclick="sendOrderWhatsApp()" class="flex-1 bg-brand-dark hover:bg-black text-white font-bold py-2.5 rounded-xl text-xs transition shadow-md flex items-center justify-center gap-1">
+                    <i class="fa-brands fa-whatsapp text-brand-accent text-sm"></i> Cotizar por WhatsApp
+                </button>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- SCRIPT DE LÓGICA COMPLETA -->
+    <script>
+        // --- BASE DE DATOS DE PRENDAS Y TASAS ---
+        const garmentsConfig = {
+            jacket: { name: 'Chaqueta Denim Re-Vibe', baseUSD: 25, water: 3500, co2: 12.5, waste: 650, svgPath: 'M120 100 L180 80 L250 110 L320 80 L380 100 L440 180 L380 220 L370 420 L130 420 L120 220 L60 180 Z' },
+            tshirt: { name: 'Camiseta Algodón Re-Vibe', baseUSD: 12, water: 2700, co2: 7.0, waste: 250, svgPath: 'M150 100 Q250 150 350 100 L430 160 L370 240 L350 210 L350 430 L150 430 L150 210 L130 240 L70 160 Z' },
+            pants: { name: 'Jeans Pantalón Re-Vibe', baseUSD: 22, water: 3000, co2: 10.0, waste: 500, svgPath: 'M140 80 L360 80 L380 440 L260 440 L250 200 L240 440 L120 440 Z' },
+            hoodie: { name: 'Hoodie Sudadera Re-Vibe', baseUSD: 28, water: 3200, co2: 11.0, waste: 600, svgPath: 'M150 110 Q250 60 350 110 L440 190 L380 260 L360 220 L360 430 L140 430 L140 220 L120 260 L60 190 Z' }
+        };
+
+        const exchangeRates = {
+            COP: { symbol: '$', rate: 4000.0, label: 'COP' },
+            USD: { symbol: '$', rate: 1.0, label: 'USD' },
+            MXN: { symbol: '$', rate: 18.0, label: 'MXN' },
+            EUR: { symbol: '€', rate: 0.92, label: 'EUR' }
+        };
+
+        // --- ESTADO GLOBAL ---
+        let canvas;
+        let selectedGarmentKey = 'jacket';
+        let currentGarmentColor = '#3B5998';
+        let currentCurrency = 'COP';
+        let customElementsList = [];
+
+        // --- INICIALIZACIÓN DE LA APP ---
+        window.onload = function() {
+            canvas = new fabric.Canvas('garment-canvas', {
+                selection: true,
+                preserveObjectStacking: true
+            });
+
+            updateGarmentBackground();
+            updateAllPrices();
+
+            canvas.on('object:added', refreshBudget);
+            canvas.on('object:removed', refreshBudget);
+        };
+
+        // --- SILUETAS Y FONDO EN CANVA ---
+        function updateGarmentBackground() {
+            const garment = garmentsConfig[selectedGarmentKey];
+
+            const svgRaw = `
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 500">
+                    <rect width="500" height="500" fill="#F8FAFC"/>
+                    <path d="${garment.svgPath}" fill="${currentGarmentColor}" stroke="#0F172A" stroke-width="8" stroke-linejoin="round"/>
+                </svg>
+            `;
+
+            fabric.loadSVGFromString(svgRaw, function(objects, options) {
+                const loadedObject = fabric.util.groupSVGElements(objects, options);
+                loadedObject.set({
+                    scaleX: canvas.width / 500,
+                    scaleY: canvas.height / 500,
+                    selectable: false,
+                    evented: false,
+                    left: 0,
+                    top: 0
+                });
+
+                canvas.setBackgroundImage(loadedObject, canvas.renderAll.bind(canvas));
+            });
+        }
+
+        // --- SELECCIÓN DE PRENDA BASE Y COLOR ---
+        function selectGarment(key) {
+            selectedGarmentKey = key;
+
+            document.querySelectorAll('.garment-btn').forEach(btn => {
+                btn.classList.remove('border-brand-dark', 'bg-stone-50');
+                btn.classList.add('border-stone-200');
+            });
+
+            const activeBtn = document.getElementById(`btn-garment-${key}`);
+            if (activeBtn) {
+                activeBtn.classList.add('border-brand-dark', 'bg-stone-50');
+                activeBtn.classList.remove('border-stone-200');
+            }
+
+            updateGarmentBackground();
+            refreshBudget();
+        }
+
+        function changeGarmentColor(colorHex) {
+            currentGarmentColor = colorHex;
+            updateGarmentBackground();
+        }
+
+        // --- HERRAMIENTAS DE PERSONALIZACIÓN ---
+
+        function addPresetSticker(emoji, name) {
+            const textObj = new fabric.Text(emoji, {
+                left: 180 + (Math.random() * 30 - 15),
+                top: 180 + (Math.random() * 30 - 15),
+                fontSize: 55,
+                cornerColor: '#0F172A',
+                cornerSize: 8,
+                transparentCorners: false
+            });
+
+            textObj.customData = { id: Date.now(), type: 'Parche Re-Vibe', name: name, costUSD: 3.0 };
+
+            canvas.add(textObj);
+            canvas.setActiveObject(textObj);
+            refreshBudget();
+        }
+
+        function handleImageUpload(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                fabric.Image.fromURL(e.target.result, function(img) {
+                    img.scaleToWidth(100);
+                    img.set({
+                        left: 180,
+                        top: 180,
+                        cornerColor: '#0F172A',
+                        cornerSize: 8,
+                        transparentCorners: false
+                    });
+
+                    img.customData = { id: Date.now(), type: 'Arte Personalizado', name: file.name.substring(0, 15), costUSD: 3.0 };
+
+                    canvas.add(img);
+                    canvas.setActiveObject(img);
+                    refreshBudget();
+                });
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function addCustomText() {
+            const input = document.getElementById('custom-text-input');
+            const font = document.getElementById('text-font-family').value;
+            const color = document.getElementById('text-color-picker').value;
+            const textVal = input.value.trim() || 'RE-VIBE';
+
+            const textObj = new fabric.Text(textVal, {
+                left: 150,
+                top: 200,
+                fontFamily: font,
+                fill: color,
+                fontSize: 32,
+                cornerColor: '#0F172A',
+                cornerSize: 8,
+                transparentCorners: false
+            });
+
+            textObj.customData = { id: Date.now(), type: 'Bordado/Texto', name: `"${textVal}"`, costUSD: 4.0 };
+
+            canvas.add(textObj);
+            canvas.setActiveObject(textObj);
+            refreshBudget();
+            input.value = '';
+        }
+
+        function addDistressEffect(type) {
+            let fabricObj;
+            let name = 'Efecto Re-Vibe';
+
+            if (type === 'rip') {
+                name = 'Corte Ripped';
+                fabricObj = new fabric.Rect({
+                    left: 180, top: 200, width: 80, height: 10,
+                    fill: '#E2E8F0', stroke: '#0F172A', strokeWidth: 1.5, rx: 3, ry: 3
+                });
+            } else if (type === 'stud') {
+                name = 'Tachuela Metal';
+                fabricObj = new fabric.Circle({
+                    left: 200, top: 200, radius: 12, fill: '#94A3B8', stroke: '#0F172A', strokeWidth: 2
+                });
+            } else if (type === 'pin') {
+                name = 'Gancho Imperdible';
+                fabricObj = new fabric.Text('🧷', { left: 200, top: 200, fontSize: 40 });
+            } else {
+                name = 'Parche Tela Usada';
+                fabricObj = new fabric.Circle({
+                    left: 190, top: 190, radius: 25, fill: '#CBD5E1', stroke: '#0F172A', strokeWidth: 2, strokeDashArray: [4, 4]
+                });
+            }
+
+            fabricObj.set({ cornerColor: '#0F172A', cornerSize: 8, transparentCorners: false });
+            fabricObj.customData = { id: Date.now(), type: 'Efecto/Herraje', name: name, costUSD: 2.0 };
+
+            canvas.add(fabricObj);
+            canvas.setActiveObject(fabricObj);
+            refreshBudget();
+        }
+
+        // --- MANIPULACIÓN EN LIENZO ---
+        function deleteSelected() {
+            const activeObj = canvas.getActiveObject();
+            if (activeObj) {
+                canvas.remove(activeObj);
+                canvas.discardActiveObject();
+                refreshBudget();
+            }
+        }
+
+        function duplicateSelected() {
+            const activeObj = canvas.getActiveObject();
+            if (activeObj) {
+                activeObj.clone(function(cloned) {
+                    cloned.set({
+                        left: activeObj.left + 15,
+                        top: activeObj.top + 15,
+                        cornerColor: '#0F172A'
+                    });
+                    if (activeObj.customData) {
+                        cloned.customData = { ...activeObj.customData, id: Date.now() };
+                    }
+                    canvas.add(cloned);
+                    canvas.setActiveObject(cloned);
+                    refreshBudget();
+                });
+            }
+        }
+
+        function centerObject(axis) {
+            const activeObj = canvas.getActiveObject();
+            if (activeObj) {
+                if (axis === 'horizontal') activeObj.centerH();
+                canvas.renderAll();
+            }
+        }
+
+        function bringToFront() {
+            const activeObj = canvas.getActiveObject();
+            if (activeObj) {
+                activeObj.bringToFront();
+                canvas.renderAll();
+            }
+        }
+
+        function sendToBack() {
+            const activeObj = canvas.getActiveObject();
+            if (activeObj) {
+                activeObj.sendToBack();
+                canvas.renderAll();
+            }
+        }
+
+        function clearCanvas() {
+            const objects = canvas.getObjects();
+            objects.forEach(obj => canvas.remove(obj));
+            refreshBudget();
+        }
+
+        // --- SISTEMA DE MONEDA Y PRESUPUESTO ---
+        function changeCurrency() {
+            currentCurrency = document.getElementById('currency-select').value;
+            updateAllPrices();
+            refreshBudget();
+        }
+
+        function formatPrice(valUSD) {
+            const curr = exchangeRates[currentCurrency];
+            const converted = valUSD * curr.rate;
+            if (currentCurrency === 'COP') {
+                return `${curr.symbol}${Math.round(converted).toLocaleString('es-CO')}`;
+            }
+            return `${curr.symbol}${converted.toFixed(2)}`;
+        }
+
+        function updateAllPrices() {
+            document.getElementById('price-tag-jacket').innerText = formatPrice(garmentsConfig.jacket.baseUSD);
+            document.getElementById('price-tag-tshirt').innerText = formatPrice(garmentsConfig.tshirt.baseUSD);
+            document.getElementById('price-tag-pants').innerText = formatPrice(garmentsConfig.pants.baseUSD);
+            document.getElementById('price-tag-hoodie').innerText = formatPrice(garmentsConfig.hoodie.baseUSD);
+        }
+
+        function refreshBudget() {
+            const currentGarment = garmentsConfig[selectedGarmentKey];
+            let totalUSD = currentGarment.baseUSD;
+            const itemsOnCanvas = [];
+
+            canvas.getObjects().forEach(obj => {
+                if (obj.customData) {
+                    totalUSD += obj.customData.costUSD;
+                    itemsOnCanvas.push(obj.customData);
+                }
+            });
+
+            document.getElementById('total-price-display').innerText = `${formatPrice(totalUSD)} ${currentCurrency}`;
+            document.getElementById('cart-badge').innerText = itemsOnCanvas.length + 1;
+
+            document.getElementById('metric-water').innerText = `${currentGarment.water.toLocaleString()} L`;
+            document.getElementById('metric-co2').innerText = `${currentGarment.co2} kg`;
+            document.getElementById('metric-waste').innerText = `${currentGarment.waste} g`;
+
+            const breakdownEl = document.getElementById('modal-items-breakdown');
+            breakdownEl.innerHTML = `
+                <div class="flex justify-between font-bold text-stone-800 border-b border-stone-200 pb-1">
+                    <span>${currentGarment.name}</span>
+                    <span>${formatPrice(currentGarment.baseUSD)}</span>
+                </div>
+            `;
+
+            itemsOnCanvas.forEach(item => {
+                breakdownEl.innerHTML += `
+                    <div class="flex justify-between text-stone-600">
+                        <span>+ ${item.type}: ${item.name}</span>
+                        <span class="font-semibold">${formatPrice(item.costUSD)}</span>
+                    </div>
+                `;
+            });
+
+            breakdownEl.innerHTML += `
+                <div class="flex justify-between font-extrabold text-brand-dark pt-2 border-t border-stone-200 text-sm">
+                    <span>Total Re-Vibe:</span>
+                    <span class="text-emerald-700">${formatPrice(totalUSD)} ${currentCurrency}</span>
+                </div>
+            `;
+        }
+
+        // --- PESTAÑAS Y MODALES ---
+        function switchTab(tabId) {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+            document.querySelectorAll('.tab-btn').forEach(el => {
+                el.classList.remove('border-b-2', 'border-brand-dark', 'text-brand-dark', 'active');
+                el.classList.add('text-stone-500');
+            });
+
+            document.getElementById(`tab-${tabId}`).classList.remove('hidden');
+            const btn = document.getElementById(`tab-btn-${tabId}`);
+            btn.classList.add('border-b-2', 'border-brand-dark', 'text-brand-dark', 'active');
+            btn.classList.remove('text-stone-500');
+        }
+
+        function toggleModal(modalId) {
+            document.getElementById(modalId).classList.toggle('hidden');
+        }
+
+        // --- EXPORTACIÓN Y WHATSAPP ---
+        function downloadDesignPNG() {
+            canvas.discardActiveObject();
+            canvas.renderAll();
+
+            const dataURL = canvas.toDataURL({
+                format: 'png',
+                quality: 1.0,
+                multiplier: 2
+            });
+
+            const link = document.createElement('a');
+            link.download = `ReVibe_Studio_Design_${Date.now()}.png`;
+            link.href = dataURL;
+            link.click();
+        }
+
+        function sendOrderWhatsApp() {
+            const name = document.getElementById('client-name').value.trim();
+            const phone = document.getElementById('client-phone').value.trim() || '573000000000';
+            const notes = document.getElementById('client-notes').value.trim();
+
+            if (!name) {
+                alert('Por favor ingresa tu nombre.');
+                return;
+            }
+
+            const currentGarment = garmentsConfig[selectedGarmentKey];
+            let msg = `*¡Hola RE-VIBE Studio! Deseo cotizar mi prenda de upcycling* ⚡♻️\n\n`;
+            msg += `👤 *Cliente:* ${name}\n`;
+            msg += `👕 *Prenda Base:* ${currentGarment.name}\n`;
+            msg += `🎨 *Elementos personalizados:* ${document.getElementById('cart-badge').innerText - 1} elementos\n`;
+            msg += `💰 *Total Estimado:* ${document.getElementById('total-price-display').innerText}\n`;
+            if (notes) msg += `📝 *Notas / Talla:* ${notes}\n`;
+
+            const encodedMsg = encodeURIComponent(msg);
+            window.open(`https://wa.me/${phone.replace(/[^0-9]/g, '')}?text=${encodedMsg}`, '_blank');
+        }
+    </script>
+</body>
+</html>
+```
